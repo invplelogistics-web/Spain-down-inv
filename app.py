@@ -3,6 +3,17 @@ import fitz  # PyMuPDF
 import pandas as pd
 import io
 
+# Hàm trích xuất tên công ty (Hãng)
+def extract_company_name(lines):
+    company_keywords = ["S.A.", "S.L.", "LIMITED", "LTD", "CORP", "LLC", "CO.", "INC"]
+    for line in lines:
+        upper_line = line.upper()
+        if any(keyword in upper_line for keyword in company_keywords):
+            if not any(skip in upper_line for skip in ["CLIENTE", "C.I.F", "DOCUMENTO", "PEDIDO", "ENTREGA", "PÁGINA"]):
+                return line.strip()
+    return ""
+
+# Hàm chính trích xuất thông tin
 def extract_invoice_info(pdf_file):
     doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
     text = ""
@@ -20,18 +31,17 @@ def extract_invoice_info(pdf_file):
 
     lines = text.splitlines()
 
-    # Trích CLIENTE
+    # CLIENTE
     for i, line in enumerate(lines):
         if "CLIENTE" in line.upper():
             if i + 1 < len(lines):
                 result["CLIENTE"] = lines[i + 1].strip()
             break
 
-    # Trích Hãng
-    if "ZARA ESPAÑA" in text:
-        result["Hãng"] = "ZARA ESPAÑA, S.A."
+    # Hãng (tên công ty)
+    result["Hãng"] = extract_company_name(lines)
 
-    # Trích các trường còn lại
+    # Các trường khác
     for i, line in enumerate(lines):
         if "Nº DOCUMENTO" in line:
             result["No DOCUMENTO"] = line.split(":")[-1].strip()
@@ -40,17 +50,15 @@ def extract_invoice_info(pdf_file):
         elif "Nº PEDIDO" in line:
             result["No PEDIDO"] = line.split(":")[-1].strip()
         elif "IMPORTE EUR" in line:
-            # Lấy dòng phía TRƯỚC dòng này, nơi chứa số tiền
             if i - 1 >= 0:
                 possible_amount = lines[i - 1].strip()
-                # Kiểm tra xem có phải số tiền không
                 if possible_amount.replace(".", "").replace(",", "").isdigit():
                     result["IMPORTE"] = possible_amount
 
     return result
 
-# Streamlit UI
-st.set_page_config(page_title="Trích xuất hóa đơn nhiều PDF", layout="wide")
+# Giao diện Streamlit
+st.set_page_config(page_title="Trích xuất hóa đơn PDF", layout="wide")
 st.title("📂 Trích xuất nhiều hóa đơn PDF và tải CSV")
 
 st.write("Tải nhiều file PDF để trích xuất thông tin: **CLIENTE, Hãng, No PEDIDO, FECHA, No DOCUMENTO, IMPORTE**")
