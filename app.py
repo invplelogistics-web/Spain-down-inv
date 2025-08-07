@@ -18,8 +18,9 @@ def extract_invoice_info(pdf_file):
         "IMPORTE": ""
     }
 
-    # Trích CLIENTE
     lines = text.splitlines()
+
+    # Trích CLIENTE
     for i, line in enumerate(lines):
         if "CLIENTE" in line.upper():
             if i + 1 < len(lines):
@@ -39,8 +40,12 @@ def extract_invoice_info(pdf_file):
         elif "Nº PEDIDO" in line:
             result["No PEDIDO"] = line.split(":")[-1].strip()
         elif "IMPORTE EUR" in line:
-            if i + 1 < len(lines):
-                result["IMPORTE"] = lines[i + 1].strip()
+            # Lấy dòng phía TRƯỚC dòng này, nơi chứa số tiền
+            if i - 1 >= 0:
+                possible_amount = lines[i - 1].strip()
+                # Kiểm tra xem có phải số tiền không
+                if possible_amount.replace(".", "").replace(",", "").isdigit():
+                    result["IMPORTE"] = possible_amount
 
     return result
 
