@@ -19,19 +19,18 @@ def extract_invoice_info(pdf_file):
     }
 
     # Trích CLIENTE
-    for line in text.splitlines():
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
         if "CLIENTE" in line.upper():
-            next_index = text.splitlines().index(line) + 1
-            if next_index < len(text.splitlines()):
-                result["CLIENTE"] = text.splitlines()[next_index].strip()
+            if i + 1 < len(lines):
+                result["CLIENTE"] = lines[i + 1].strip()
             break
 
     # Trích Hãng
     if "ZARA ESPAÑA" in text:
         result["Hãng"] = "ZARA ESPAÑA, S.A."
 
-    # Trích các thông tin còn lại
-    lines = text.splitlines()
+    # Trích các trường còn lại
     for i, line in enumerate(lines):
         if "Nº DOCUMENTO" in line:
             result["No DOCUMENTO"] = line.split(":")[-1].strip()
@@ -41,8 +40,7 @@ def extract_invoice_info(pdf_file):
             result["No PEDIDO"] = line.split(":")[-1].strip()
         elif "IMPORTE EUR" in line:
             if i + 1 < len(lines):
-                importe_value = lines[i + 1].strip()
-                result["IMPORTE"] = f"{line.strip()} {importe_value}"
+                result["IMPORTE"] = lines[i + 1].strip()
 
     return result
 
